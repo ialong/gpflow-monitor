@@ -13,3 +13,5 @@ datasets/cifar-10-batches-py/
 *.bbl
 *.blg
 gpflow_monitor.egg-info
+build/
+dist/

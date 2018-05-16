@@ -265,6 +265,25 @@ class SaveFunctionAsHistogram(SaveFunction):
         self.file_writer.add_summary(*summary)
 
 
+class SaveTensor(Task):
+    """
+    Store the function outputs as a histogram
+    """
+    def __init__(self, sequence, trigger: Trigger, file_writer, function, name):
+        super().__init__(sequence, trigger)
+        self.file_writer = file_writer
+        self.function = function
+        self.name = name
+        self.pl = tf.placeholder(tf.float64)
+        self.op = tf.summary.tensor_summary(self.name, self.pl)
+
+    def _event_handler(self, manager):
+        values = self.function()
+        ops = [self.op, manager.global_step]
+        summary = manager.session.run(ops, {self.pl: values})
+        self.file_writer.add_summary(*summary)
+
+
 class SaveImage(Task):
     """
     Store and display matplotlib images
