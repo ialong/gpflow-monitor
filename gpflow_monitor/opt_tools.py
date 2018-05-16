@@ -22,6 +22,8 @@ import gpflow
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
+from datetime import datetime
+import pickle
 
 from . import timer
 
@@ -91,6 +93,19 @@ class StoreSession(Task):
         self.saver.save(self.session, self.hist_path, global_step=manager.global_step)
 
 
+class SaveModel(Task):
+    def __init__(self, sequence, trigger: Trigger, path, model: gpflow.Parameterized, verbose=False):
+        super().__init__(sequence, trigger)
+        self.path = path
+        self.model = model
+        self.verbose = verbose
+
+    def _event_handler(self, manager):
+        if self.verbose:
+            print(str(datetime.now()) + '  Saving model in: ' + self.path)
+        pickle.dump(self.model.read_values(), open(self.path, 'wb'))
+
+
 class TensorBoard(Task):
     def __init__(self, sequence, trigger: Trigger, tensors: list,
                  file_writer: tf.summary.FileWriter):
@@ -103,9 +118,8 @@ class TensorBoard(Task):
         self.file_writer.add_summary(summary, step)
 
 
-
 class ModelTensorBoard(TensorBoard):
-    def __init__(self, sequence, trigger: Trigger, model: gpflow.models.Model,
+    def __init__(self, sequence, trigger: Trigger, model: gpflow.Parameterized,
                  file_writer: tf.summary.FileWriter, parameters=None, additional_summaries=None):
         """
         Creates a Task that creates a sensible TensorBoard for a model.
