@@ -74,7 +74,7 @@ class StoreSession(Task):
         super().__init__(sequence, trigger)
         self.hist_path = hist_path
         self.restore_path = restore_path
-        self.saver = tf.train.Saver(max_to_keep=3) if saver is None else saver
+        self.saver = tf.train.Saver(max_to_keep=5) if saver is None else saver
         self.session = session
 
         restore_path = self.restore_path
@@ -93,7 +93,18 @@ class StoreSession(Task):
         self.saver.save(self.session, self.hist_path, global_step=manager.global_step)
 
 
-class SaveModel(Task):
+class SaveModel_gpflow(Task):
+    def __init__(self, sequence, trigger: Trigger, model: gpflow.Parameterized, path):
+        super().__init__(sequence, trigger)
+        self.path = path
+        self.model = model
+        self.saver = gpflow.Saver()
+
+    def _event_handler(self, manager):
+        self.saver.save(self.path, self.model)
+
+
+class SaveModel_pickle(Task):
     def __init__(self, sequence, trigger: Trigger, path, model: gpflow.Parameterized, verbose=False):
         super().__init__(sequence, trigger)
         self.path = path
@@ -103,7 +114,8 @@ class SaveModel(Task):
     def _event_handler(self, manager):
         if self.verbose:
             print(str(datetime.now()) + '  Saving model in: ' + self.path)
-        pickle.dump(self.model.read_values(), open(self.path, 'wb'))
+        with open(self.path, 'wb') as file:
+            pickle.dump(self.model.read_values(), file)
 
 
 class TensorBoard(Task):
